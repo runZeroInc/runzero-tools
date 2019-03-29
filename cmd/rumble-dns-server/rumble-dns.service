@@ -1,0 +1,11 @@
+[Unit]
+Description=rumble-dns
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/local/bin/rumble-dns
+StandardOutput=syslog
+
+[Install]
+WantedBy=multi-user.target
