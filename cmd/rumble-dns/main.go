@@ -47,7 +47,7 @@ var (
 	subdomain  = flag.String("subdomain", "v1.nxdomain.us", "subdomain handled by rumble-dns")
 )
 
-var topDom string
+var helperDomain string
 
 func handleReflect(w dns.ResponseWriter, r *dns.Msg) {
 	var (
@@ -145,7 +145,7 @@ func handleReflect(w dns.ResponseWriter, r *dns.Msg) {
 
 					rr = &dns.CNAME{
 						Hdr:    dns.RR_Header{Name: r.Question[0].Name, Rrtype: dns.TypeCNAME, Class: dns.ClassINET, Ttl: 60},
-						Target: fmt.Sprintf("c0%.8x%s.%s", dk, hex.EncodeToString(rnd.XorBytesWithBytes(buf.Bytes(), dkb)), topDom),
+						Target: fmt.Sprintf("c0%.8x%s.%s", dk, hex.EncodeToString(rnd.XorBytesWithBytes(buf.Bytes(), dkb)), helperDomain),
 					}
 					m.Answer = append(m.Answer, rr)
 				}
@@ -275,14 +275,6 @@ func decodeAndLogAddress(ip string, port string, qname string, r *dns.Msg) (dns.
 	}, nil
 }
 
-func ensureTrailingDot(s string) string {
-	// Ensure that the name has a trailing dot
-	if len(s) > 0 && s[len(s)-1:len(s)] != "." {
-		return s + "."
-	}
-	return s
-}
-
 func serveDNS(net, name, secret string, soreuseport bool) {
 	switch name {
 	case "":
@@ -332,11 +324,11 @@ func main() {
 		runtime.GOMAXPROCS(runtime.NumCPU())
 	}
 
-	topDom = ensureTrailingDot(*subdomain)
+	helperDomain = rnd.EnsureTrailingDot(*subdomain)
 
 	log.Printf("rumble-dns-server starting on port %d", *port)
 
-	dns.HandleFunc(topDom, handleReflect)
+	dns.HandleFunc(helperDomain, handleReflect)
 	go serveDNS("tcp", name, secret, false)
 	go serveDNS("udp", name, secret, false)
 

@@ -11,3 +11,12 @@ func SanitizeStringForJSON(str string) string {
 	// Remove invalid UTF-8 sequences (per the Go definition)
 	return string([]rune(str))
 }
+
+// EnsureTrailingDot returns a copy of the string with a trailing dot, if one does not exist
+func EnsureTrailingDot(s string) string {
+	// Ensure that the name has a trailing dot
+	if len(s) > 0 && s[len(s)-1:len(s)] != "." {
+		return s + "."
+	}
+	return s
+}

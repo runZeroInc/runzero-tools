@@ -2,21 +2,17 @@
 
 Copyright (C) 2018-2019 Critical Research Corporation
 
-DNS Remote Sensing
-==================
+DNS Remote Ping
+===============
 
-Use the v1.nxdomain.us rumble DNS server to identify hosts reachable by an open resolver.
+Use a rumble DNS server to identify hosts reachable by an open resolver.
 
 Usage:
 
-$ go run main.go <target-resolver> 127.0.0.1 255.255.255.255 192.168.0.1 192.168.0.9 192.168.0.254 8.8.8.8 8.8.8.7
-2018/08/30 13:32:54        127.0.0.1           120ms    << Valid DNS (localhost of resolver)
-2018/08/30 13:32:54  255.255.255.255            59ms    << Invalid address rejected by bind (broadcast)
-2018/08/30 13:32:54      192.168.0.1            81ms    << Valid DNS server
-2018/08/30 13:32:54      192.168.0.9            59ms    << Live local host, but no DNS service
-2018/08/30 13:32:56    192.168.0.254          2013ms    << Timeout, no response
-2018/08/30 13:32:56          8.8.8.8            81ms    << Valid DNS server
-2018/08/30 13:32:58          8.8.8.7          2005ms    << Timeout, no response
+$ rumble-dnsrp -quiet 192.168.0.3 192.168.30.0/24
+192.168.30.29              alive via 192.168.0.3:53                60ms       code:2
+192.168.30.34              alive via 192.168.0.3:53                69ms       code:2
+192.168.30.143             alive via 192.168.0.3:53               267ms       code:2
 
 */
 
@@ -24,6 +20,7 @@ package main
 
 import (
 	"encoding/hex"
+	"flag"
 	"fmt"
 	"math/rand"
 	"net"
@@ -37,28 +34,44 @@ import (
 	"github.com/miekg/dns"
 )
 
-var helperDomain = "v1.nxdomain.us."
+var (
+	port      = flag.Int("port", 53, "port number to send queries to")
+	threads   = flag.Int("threads", runtime.NumCPU(), "number of parallel threads")
+	subdomain = flag.String("subdomain", "v1.nxdomain.us", "subdomain handled by rumble-dns")
+	quiet     = flag.Bool("quiet", false, "quiet mode, only show positive results")
+	help      = flag.Bool("help", false, "show usage information")
+	h         = flag.Bool("h", false, "show usage information")
+)
 
 func main() {
 
-	if len(os.Args) < 3 {
-		fmt.Printf("%s <resolver> <cidrs>\n", os.Args[0])
+	flag.Parse()
+
+	if len(flag.Args()) < 2 {
+		fmt.Fprintf(os.Stderr, "Usage: %s <resolver> <cidrs>\n", os.Args[0])
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
+	if *help || *h {
+		flag.Usage()
 		os.Exit(1)
 	}
 
 	rnd.SeedMathRand()
 	rnd.RandomizeObfuscationKeys()
 
-	dst := os.Args[1]
-	resolver := net.JoinHostPort(dst, "53")
+	dst := flag.Args()[0]
+	resolver := net.JoinHostPort(dst, fmt.Sprintf("%d", *port))
 
-	cidrs := os.Args[2:]
+	cidrs := flag.Args()[1:]
 
 	wg := new(sync.WaitGroup)
 	ipc := make(chan string)
 	stp := make(chan int)
 
-	for i := 0; i < runtime.NumCPU(); i++ {
+	helperDomain := rnd.EnsureTrailingDot(*subdomain)
+	for i := 0; i < *threads; i++ {
 		go remoteSense(wg, ipc, resolver, helperDomain)
 		wg.Add(1)
 	}
@@ -83,7 +96,6 @@ func remoteSense(wg *sync.WaitGroup, ipc chan string, resolver string, helperDom
 		m.RecursionDesired = true
 
 		ip := net.ParseIP(addr)
-
 		if ip == nil {
 			fmt.Printf("invalid address: %s\n", addr)
 			continue
@@ -99,10 +111,27 @@ func remoteSense(wg *sync.WaitGroup, ipc chan string, resolver string, helperDom
 		m.Question[0] = dns.Question{Name: tracerName, Qtype: dns.TypeA, Qclass: dns.ClassINET}
 		start := time.Now().UTC()
 		in, _, err := c.Exchange(m, resolver)
+
+		valid := false
+		rstr := ""
 		if err != nil {
-			fmt.Printf("%16s\t%10dms\tTIMEOUT\n", addr, time.Now().UTC().Sub(start)/time.Millisecond)
+			rstr = "error:" + err.Error()
 		} else {
-			fmt.Printf("%16s\t%10dms\t%3d\n", addr, time.Now().UTC().Sub(start)/time.Millisecond, in.MsgHdr.Rcode)
+			if in.MsgHdr.Rcode == 2 {
+				valid = true
+			}
+
+			rstr = fmt.Sprintf("code:%d", in.MsgHdr.Rcode)
+		}
+
+		diff := time.Now().UTC().Sub(start) / time.Millisecond
+
+		if !valid {
+			if !*quiet {
+				fmt.Printf("%-20s unreachable via %-25s %6dms      %s\n", addr, resolver, diff, rstr)
+			}
+		} else {
+			fmt.Printf("%-20s       alive via %-25s %6dms       %s\n", addr, resolver, diff, rstr)
 		}
 	}
 	wg.Done()
