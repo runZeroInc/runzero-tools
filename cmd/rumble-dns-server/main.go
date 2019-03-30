@@ -44,9 +44,10 @@ var (
 	tsig       = flag.String("tsig", "", "use MD5 hmac tsig: keyname:base64")
 	cpu        = flag.Int("cpu", 0, "number of cores to use")
 	port       = flag.Int("port", 53, "port number to listen on")
+	subdomain  = flag.String("subdomain", "v1.nxdomain.us", "subdomain handled by rumble-dns")
 )
 
-const topDom = "v1.nxdomain.us."
+var topDom string
 
 func handleReflect(w dns.ResponseWriter, r *dns.Msg) {
 	var (
@@ -79,8 +80,9 @@ func handleReflect(w dns.ResponseWriter, r *dns.Msg) {
 
 	prefix := strings.ToLower(r.Question[0].Name[0:2])
 	switch prefix {
+	// T0: Return the source address of the resolver in the response
+	//     Handles A, AAAA, and TXT query types.
 	case "t0":
-		// Handle reflection that returns the resolvers
 		decodeAndLogTracer(a.String(), str, r)
 
 		if v4 {
@@ -111,6 +113,7 @@ func handleReflect(w dns.ResponseWriter, r *dns.Msg) {
 			m.Extra = append(m.Extra, t)
 		}
 
+	// E0: Return an encoded EDNS0 Client Subnet field as a CNAME
 	case "e0":
 		dk, ok := decodeAndLogTracer(a.String(), str, r)
 		o := r.IsEdns0()
@@ -152,6 +155,7 @@ func handleReflect(w dns.ResponseWriter, r *dns.Msg) {
 			m.Rcode = 3
 		}
 
+	// A0: Return an A or AAAA pointing to the encoded address
 	case "a0":
 		rr, err := decodeAndLogAddress(a.String(), str, strings.ToLower(r.Question[0].Name), r)
 		if err != nil {
@@ -162,11 +166,12 @@ func handleReflect(w dns.ResponseWriter, r *dns.Msg) {
 		m.Answer = append(m.Answer, rr)
 
 	default:
-		// Look for queries for A <something>.s0[encoded].domain or s0[encoded].domain
+		// S0 and <something>.S0 : Return a NS record for the encoded addresses
 		if idx := strings.Index(strings.ToLower(r.Question[0].Name), "s0"); idx != -1 {
 
-			m.Authoritative = true
+			// Create an A0 query pointing to the target address
 			nsName := "a" + strings.ToLower(string(r.Question[0].Name[idx+1:]))
+			m.Authoritative = true
 			rr = &dns.NS{
 				Hdr: dns.RR_Header{Name: r.Question[0].Name, Rrtype: dns.TypeNS, Class: dns.ClassINET, Ttl: 60},
 				Ns:  nsName,
@@ -218,7 +223,7 @@ func decodeAndLogTracer(ip string, port string, r *dns.Msg) (uint32, bool) {
 	tracerIP := net.IP(decodedBytes[0:16])
 	tracerTS := binary.BigEndian.Uint64(decodedBytes[16:24])
 
-	log.Printf("%s:%s requested TRACER %s (type:%d/class:%d) with XID %d (ip:%s ts:%s)",
+	log.Printf("%s:%s requested trace %s (type:%d/class:%d) with XID %d (ip:%s ts:%s)",
 		ip, port, r.Question[0].Name, r.Question[0].Qtype, r.Question[0].Qclass, r.Id,
 		tracerIP.String(), time.Unix(0, int64(tracerTS)).UTC().String(),
 	)
@@ -270,7 +275,15 @@ func decodeAndLogAddress(ip string, port string, qname string, r *dns.Msg) (dns.
 	}, nil
 }
 
-func serve(net, name, secret string, soreuseport bool) {
+func ensureTrailingDot(s string) string {
+	// Ensure that the name has a trailing dot
+	if len(s) > 0 && s[len(s)-1:len(s)] != "." {
+		return s + "."
+	}
+	return s
+}
+
+func serveDNS(net, name, secret string, soreuseport bool) {
 	switch name {
 	case "":
 		server := &dns.Server{Addr: fmt.Sprintf("[::]:%d", *port), Net: net, TsigSecret: nil}
@@ -319,11 +332,13 @@ func main() {
 		runtime.GOMAXPROCS(runtime.NumCPU())
 	}
 
+	topDom = ensureTrailingDot(*subdomain)
+
 	log.Printf("rumble-dns-server starting on port %d", *port)
 
 	dns.HandleFunc(topDom, handleReflect)
-	go serve("tcp", name, secret, false)
-	go serve("udp", name, secret, false)
+	go serveDNS("tcp", name, secret, false)
+	go serveDNS("udp", name, secret, false)
 
 	sig := make(chan os.Signal)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
