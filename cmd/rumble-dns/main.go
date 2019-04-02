@@ -51,39 +51,39 @@ var helperDomain string
 
 func handleReflect(w dns.ResponseWriter, r *dns.Msg) {
 	var (
-		v4  bool
-		rr  dns.RR
-		str string
-		a   net.IP
+		v4   bool
+		rr   dns.RR
+		port string
+		a    net.IP
 	)
 
 	m := new(dns.Msg)
 	m.SetReply(r)
 	m.Compress = *compress
 	if ip, ok := w.RemoteAddr().(*net.UDPAddr); ok {
-		str = strconv.Itoa(ip.Port) + "/udp"
+		port = strconv.Itoa(ip.Port) + "/udp"
 		a = ip.IP
 		v4 = a.To4() != nil
 	}
 	if ip, ok := w.RemoteAddr().(*net.TCPAddr); ok {
-		str = strconv.Itoa(ip.Port) + "/tcp"
+		port = strconv.Itoa(ip.Port) + "/tcp"
 		a = ip.IP
 		v4 = a.To4() != nil
 	}
 
 	if len(r.Question) == 0 {
-		log.Printf("%s:%s requested no questions", a, str)
+		log.Printf("%s:%s requested no questions", a, port)
 		return
 	}
 
-	log.Printf("%s:%s requested %s (type:%d/class:%d) with XID %d", a, str, r.Question[0].Name, r.Question[0].Qtype, r.Question[0].Qclass, r.Id)
+	log.Printf("%s:%s requested %s (type:%d/class:%d) with XID %d", a, port, r.Question[0].Name, r.Question[0].Qtype, r.Question[0].Qclass, r.Id)
 
 	prefix := strings.ToLower(r.Question[0].Name[0:2])
 	switch prefix {
 	// T0: Return the source address of the resolver in the response
 	//     Handles A, AAAA, and TXT query types.
 	case "t0":
-		decodeAndLogTracer(a.String(), str, r)
+		decodeAndLogTracer(a.String(), port, r)
 
 		if v4 {
 			rr = &dns.A{
@@ -99,7 +99,7 @@ func handleReflect(w dns.ResponseWriter, r *dns.Msg) {
 
 		t := &dns.TXT{
 			Hdr: dns.RR_Header{Name: r.Question[0].Name, Rrtype: dns.TypeTXT, Class: dns.ClassCHAOS, Ttl: 60},
-			Txt: []string{str},
+			Txt: []string{fmt.Sprintf("%s:%s", a.String(), port)},
 		}
 
 		switch r.Question[0].Qtype {
@@ -115,7 +115,7 @@ func handleReflect(w dns.ResponseWriter, r *dns.Msg) {
 
 	// E0: Return an encoded EDNS0 Client Subnet field as a CNAME
 	case "e0":
-		dk, ok := decodeAndLogTracer(a.String(), str, r)
+		dk, ok := decodeAndLogTracer(a.String(), port, r)
 		o := r.IsEdns0()
 		if ok && o != nil {
 			for _, s := range o.Option {
@@ -157,9 +157,9 @@ func handleReflect(w dns.ResponseWriter, r *dns.Msg) {
 
 	// A0: Return an A or AAAA pointing to the encoded address
 	case "a0":
-		rr, err := decodeAndLogAddress(a.String(), str, strings.ToLower(r.Question[0].Name), r)
+		rr, err := decodeAndLogAddress(a.String(), port, strings.ToLower(r.Question[0].Name), r)
 		if err != nil {
-			log.Printf("%s:%s returned error for %s: %s", a, str, r.Question[0].Name, err)
+			log.Printf("%s:%s returned error for %s: %s", a, port, r.Question[0].Name, err)
 			return
 		}
 
@@ -179,9 +179,9 @@ func handleReflect(w dns.ResponseWriter, r *dns.Msg) {
 			m.Ns = append(m.Ns, rr)
 
 			// Append the matching A or AAAA record
-			rr, err := decodeAndLogAddress(a.String(), str, nsName, r)
+			rr, err := decodeAndLogAddress(a.String(), port, nsName, r)
 			if err != nil {
-				log.Printf("%s:%s returned error for %s: %s", a, str, nsName, err)
+				log.Printf("%s:%s returned error for %s: %s", a, port, nsName, err)
 				return
 			}
 			m.Extra = append(m.Extra, rr)
@@ -193,13 +193,13 @@ func handleReflect(w dns.ResponseWriter, r *dns.Msg) {
 		if w.TsigStatus() == nil {
 			m.SetTsig(r.Extra[len(r.Extra)-1].(*dns.TSIG).Hdr.Name, dns.HmacMD5, 300, time.Now().UTC().Unix())
 		} else {
-			log.Printf("%s:%s triggered tsig error for %s: %s", a, str, r.Question[0].Name, w.TsigStatus().Error())
+			log.Printf("%s:%s triggered tsig error for %s: %s", a, port, r.Question[0].Name, w.TsigStatus().Error())
 		}
 	}
 
 	err := w.WriteMsg(m)
 	if err != nil {
-		log.Printf("%s:%s triggered error for %s: %s", a, str, r.Question[0].Name, err)
+		log.Printf("%s:%s triggered error for %s: %s", a, port, r.Question[0].Name, err)
 	}
 }
 
