@@ -1,13 +1,13 @@
 #!/usr/bin/env ruby
 
 #
-# Extract URLs from a Rumble Asset Export (JSON)
+# Extract URLs from a Rumble Asset Export (JSONL format)
 #
 
 require 'json'
 
-assets = JSON.parse($stdin.read)
-assets.each do |asset|
+$stdin.each_line do |line|
+    asset = JSON.parse(line.strip)
     asset['services'].each_pair do |n,s|
         next if s['protocol'] != "http"
         addr,port,sname = n.split("/")
