@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 #
-# Extract critical network bridges from a Rumble Asset Export (JSON)
+# Extract critical network bridges from a Rumble Asset Export (JSONL format)
 #
 
 require 'json'
@@ -27,12 +27,12 @@ ARGV.each do |net|
 end
 
 if criticalNets.length == 0 
-    $stderr.puts "usage: ./extract-bridges.rb [critical-net/24].. [critical-net/24].. < assets.json"
+    $stderr.puts "usage: ./extract-bridges.rb [critical-net/24].. [critical-net/24].. < assets.jsonl"
     exit(0)
 end
 
-assets = JSON.parse($stdin.read)
-assets.each do |asset|
+$stdin.each_line do |line|
+    asset = JSON.parse(line.strip)
     netCrit = []
     netNonCrit = []
     addrs = asset['addresses'] + asset['addresses_extra']
