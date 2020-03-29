@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) 2018-2019 Critical Research Corporation
+Copyright (C) 2018-2020 Critical Research Corporation
 
 DNS Remote Ping
 ===============

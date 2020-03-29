@@ -1,6 +1,9 @@
 package rnd
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // SanitizeStringForJSON scrubs a given string of invalid UTF8 for JSON encoding
 // TODO: Replace to ToValidUTF8 in Go 1.13: https://github.com/golang/go/issues/25805
@@ -19,4 +22,18 @@ func EnsureTrailingDot(s string) string {
 		return s + "."
 	}
 	return s
+}
+
+// TrimName removes null bytes and trims leading and trailing spaces from a string
+func TrimName(name string) string {
+	return strings.TrimSpace(strings.Replace(name, "\x00", "", -1))
+}
+
+// U64SliceToSeq turns an array of ints into a hex string
+func U64SliceToSeq(s []uint64) string {
+	seq := []string{}
+	for _, v := range s {
+		seq = append(seq, fmt.Sprintf("%x", v))
+	}
+	return strings.Join(seq, "-")
 }
