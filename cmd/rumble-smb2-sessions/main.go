@@ -1,47 +1,6 @@
 package main
 
-/*
-
-Copyright (C) 2020 Critical Research Corporation
-
-SMB2 Predictable Session ID Demonstration
-=========================================
-
-Uses predictable SMB2 Session IDs with Session Binding to monitor SMB sessions of a remote server.
-
-This can leak the dialect and status of the guessed sessions.
-
-On Windows the Signature field of the returned SESSION_SETUP response is signed with the
-original remote session key. This seems bad, but doesn't appear to be exploitable, as the
-input to this key includes a client and server challenge (among other fields), that are
-not visible as a remote third-party.
-
-On macOS (10.15) the smbd Session ID increments by 1, which leaks session activity, but SMB bind
-requests fail and no information about the active sessions is obtained.
-
-The predictable session IDs have been in place for years and seem to be a design choice.
-
-On Linux-based Synology NAS devices, the session IDs are not predictable.
-
-The session binding and signature calculation process is well-documented:
- - Handle of session binding requests: https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/5ed93f06-a1d2-4837-8954-fa8b833c2654
- - Signature calculation: https://docs.microsoft.com/en-us/archive/blogs/openspecification/smb-2-and-smb-3-security-in-windows-10-the-anatomy-of-signing-and-cryptographic-keys
-
-Usage:
-
-$ go run main.go 192.168.0.220 watch
-
-2020/03/28 16:16:31 192.168.0.220: determining the session cycle for map[ntlmssp.DNSComputer:WIN-EM7GG1U0LV3 ntlmssp.DNSDomain:WIN-EM7GG1U0LV3 ntlmssp.NTLMRevision:15 ntlmssp.NegotiationFlags:0xe28a8215 ntlmssp.NetbiosComputer:WIN-EM7GG1U0LV3 ntlmssp.NetbiosDomain:WIN-EM7GG1U0LV3 ntlmssp.TargetName:WIN-EM7GG1U0LV3 ntlmssp.Timestamp:0x01d6054627286627 ntlmssp.Version:10.0.14393 smb.Capabilities:0x0000002f smb.CipherAlg:aes-128-gcm 
-smb.Dialect:0x0311 smb.GUID:6edc815a-7bea-cb41-a1dd-6079352c4fce smb.HashAlg:sha512 smb.HashSaltLen:32 smb.SessionID:0x00002c328000002d smb.Signing:enabled smb.Status:0xc0000016]
-
-2020/03/28 16:16:48 192.168.0.220: cycle found after 205 requests: fffffffffffffffc-fffffffffffffff0-fffffffff800004c-7ffffcc-ffffffffcc000030-33ffffd4-fffffffffffffff0-18-14-fffffffffc00001c-fffffffff8000014-bffffc4-4-fffffffff8000028-ffffffffd000001c-37ffffb4-1c-fffffffffc000034-ffffffffc3ffffa8-40000030-c-fffffffff8000008-7fffffc-ffffffd6cfffffd4-2930000038-ffffffffebffffd0-14000034-3ffff8c-8-4-ffffffff5c000038-a3ffffd4        
-
-2020/03/28 16:16:48 192.168.0.220: watching for new sessions...
-2020/03/28 16:16:54 192.168.0.220: SESSION 0x00002c329c000011 is EXPIRED 
-2020/03/28 16:16:59 192.168.0.220: SESSION 0x00002c329c000031 is ACTIVE dialect:0x0311 sig:526ec3d5a65947888677c43fee02604f
-2020/03/28 16:17:03 192.168.0.220: SESSION 0x00002c329c000049 is EXPIRED 
-
-*/
+// Copyright (C) 2020 Critical Research Corporation
 
 import (
 	"encoding/binary"
