@@ -12,12 +12,11 @@ original remote session key. This seems bad, but doesn't appear to be exploitabl
 input to this key includes a client and server challenge (among other fields), that are
 not visible as a remote third-party.
 
-On macOS (10.15) the smbd Session ID increments by 1, which leaks session activity, but SMB bind
-requests fail and no information about the active sessions is obtained.
+On newer macOS systems (10.15) the smbd Session ID increments by 1, which leaks session activity, but Session Bind requests fail and no information about the active sessions is obtained.
+
+On Samba-based systems, the Session IDs are not predictable.
 
 The predictable session IDs have been in place for years and seem to be a design choice.
-
-On Samba-based systems, the session IDs are not predictable.
 
 The session binding and signature calculation process is well-documented:
  - Handle of session binding requests: https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/5ed93f06-a1d2-4837-8954-fa8b833c2654
