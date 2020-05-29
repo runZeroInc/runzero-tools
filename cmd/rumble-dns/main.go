@@ -22,7 +22,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/hdm/rumble-tools/pkg/rnd"
+	"github.com/RumbleDiscovery/rumble-tools/pkg/rnd"
 
 	log "github.com/sirupsen/logrus"
 

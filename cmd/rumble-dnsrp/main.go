@@ -29,7 +29,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hdm/rumble-tools/pkg/rnd"
+	"github.com/RumbleDiscovery/rumble-tools/pkg/rnd"
 
 	"github.com/miekg/dns"
 )

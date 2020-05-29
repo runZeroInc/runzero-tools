@@ -12,14 +12,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hdm/rumble-tools/pkg/rnd"
+	"github.com/RumbleDiscovery/rumble-tools/pkg/rnd"
 )
 
 func main() {
 	usage := fmt.Sprintf("Usage: "+
 		"\t%s <target> watch\n"+
 		"\t%s <target> hunt\n",
-		"\t%s <target> sample\n", os.Args[0], os.Args[0],os.Args[0],
+		"\t%s <target> sample\n", os.Args[0], os.Args[0], os.Args[0],
 	)
 
 	if len(os.Args) < 3 {
@@ -201,11 +201,10 @@ Predict:
 	}
 }
 
-
 func doSample(dst string) {
 	showInfo := false
 
-	for x:= 0; x <= 100; x++ {
+	for x := 0; x <= 100; x++ {
 		info, err := probe(dst, "")
 		if err != nil {
 			log.Printf("%s: %s", dst, err)
@@ -216,8 +215,8 @@ func doSample(dst string) {
 			log.Printf("%s: no sid: %#v", dst, info)
 			break
 		}
-		 
-		if ! showInfo {
+
+		if !showInfo {
 			log.Printf("%s: sample 100 session IDs for %v", dst, info)
 			showInfo = true
 		}

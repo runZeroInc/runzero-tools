@@ -1,4 +1,4 @@
-module github.com/hdm/rumble-tools
+module github.com/RumbleDiscovery/rumble-tools
 
 go 1.12
 
