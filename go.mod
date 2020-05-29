@@ -6,6 +6,8 @@ require (
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/miekg/dns v1.1.29
 	github.com/sirupsen/logrus v1.6.0
-	github.com/stretchr/objx v0.1.1 // indirect
+	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37 // indirect
+	golang.org/x/net v0.0.0-20200528225125-3c3fba18258b // indirect
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
+	golang.org/x/sys v0.0.0-20200523222454-059865788121 // indirect
 )
