@@ -1,6 +1,6 @@
 package main
 
-// Copyright (C) 2020 Critical Research Corporation
+// Copyright (C) 2020 Rumble, Inc
 
 import (
 	"encoding/binary"

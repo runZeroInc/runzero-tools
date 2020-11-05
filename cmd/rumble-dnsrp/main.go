@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) 2018-2020 Critical Research Corporation
+Copyright (C) 2018-2020 Rumble, Inc
 
 DNS Remote Ping
 ===============
@@ -37,7 +37,7 @@ import (
 var (
 	port      = flag.Int("port", 53, "port number to send queries to")
 	threads   = flag.Int("threads", runtime.NumCPU(), "number of parallel threads")
-	subdomain = flag.String("subdomain", "v1.nxdomain.us", "subdomain handled by rumble-dns")
+	subdomain = flag.String("subdomain", "helper.rumble.network", "subdomain handled by rumble-dns")
 	quiet     = flag.Bool("quiet", false, "quiet mode, only show positive results")
 	help      = flag.Bool("help", false, "show usage information")
 	h         = flag.Bool("h", false, "show usage information")

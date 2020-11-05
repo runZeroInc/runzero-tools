@@ -1,4 +1,4 @@
-// Copyright 2018-2019 Critical Research Corporation
+// Copyright 2018-2019 Rumble, Inc
 //
 //
 // Derived from reflect.go via github.com/miekg/exdns
