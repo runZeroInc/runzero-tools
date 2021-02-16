@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/gofrs/uuid v3.4.0+incompatible
 	github.com/miekg/dns v1.1.38
-	github.com/sirupsen/logrus v1.7.0
+	github.com/sirupsen/logrus v1.7.1
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37 // indirect
 	golang.org/x/net v0.0.0-20200528225125-3c3fba18258b // indirect
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
