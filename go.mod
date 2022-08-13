@@ -1,4 +1,4 @@
-module github.com/RumbleDiscovery/rumble-tools
+module github.com/runZeroInc/runzero-tools
 
 go 1.12
 

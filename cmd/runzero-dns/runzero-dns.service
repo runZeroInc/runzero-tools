@@ -1,0 +1,11 @@
+[Unit]
+Description=runzero-dns
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/local/bin/runzero-dns
+StandardOutput=syslog
+
+[Install]
+WantedBy=multi-user.target
