@@ -6,4 +6,5 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/miekg/dns v1.1.57
 	github.com/sirupsen/logrus v1.9.3
+	golang.org/x/tools v0.16.1 // indirect
 )
