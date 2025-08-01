@@ -1,10 +1,13 @@
 module github.com/runZeroInc/runzero-tools
 
-go 1.23
+go 1.23.0
+
+toolchain go1.24.1
 
 require (
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/miekg/dns v1.1.65
+	github.com/miekg/dns v1.1.67
+
 	github.com/sirupsen/logrus v1.9.3
 )
 
