@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/miekg/dns v1.1.68
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.4
 )
 
 require (
